@@ -49,7 +49,7 @@ public class Commandskull extends EssentialsCommand {
     protected void run(final Server server, final User user, final String commandLabel, final String[] args) throws Exception {
         final String owner;
         final User player;
-        if(args.length == 2){
+        if (args.length == 2) {
             player = getPlayer(server, args, 1, false, false);
         } else {
             player = user;
