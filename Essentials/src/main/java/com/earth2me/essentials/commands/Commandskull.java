@@ -50,11 +50,7 @@ public class Commandskull extends EssentialsCommand {
         final String owner;
         final User player;
         if(args.length == 2){
-            try{
-                player = getPlayer(server, args[1], true, false);
-            } catch (final Exception e) {
-                throw new TranslatableException("playerNotFound");
-            }
+            player = getPlayer(server, args, 1, false, false);
         } else {
             player = user;
         }
@@ -84,16 +80,16 @@ public class Commandskull extends EssentialsCommand {
                 owner = args[0];
             }
         } else {
-            owner = player.getName();
+            owner = user.getName();
         }
 
-        ItemStack itemSkull = player.getItemInHand();
+        ItemStack itemSkull = user.getItemInHand();
         final SkullMeta metaSkull;
         boolean spawn = false;
 
-        if (itemSkull != null && MaterialUtil.isPlayerHead(itemSkull)) {
+        if (itemSkull != null && MaterialUtil.isPlayerHead(itemSkull) && user == player) {
             metaSkull = (SkullMeta) itemSkull.getItemMeta();
-        } else if (player.isAuthorized("essentials.skull.spawn")) {
+        } else if (user.isAuthorized("essentials.skull.spawn")) {
             itemSkull = new ItemStack(SKULL_ITEM, 1, (byte) 3);
             metaSkull = (SkullMeta) itemSkull.getItemMeta();
             spawn = true;
@@ -101,14 +97,14 @@ public class Commandskull extends EssentialsCommand {
             throw new TranslatableException("invalidSkull");
         }
 
-        if (metaSkull.hasOwner() && !player.isAuthorized("essentials.skull.modify")) {
+        if (metaSkull.hasOwner() && !user.isAuthorized("essentials.skull.modify")) {
             throw new TranslatableException("noPermissionSkull");
         }
 
-        editSkull(player, itemSkull, metaSkull, owner, spawn);
+        editSkull(user, player, itemSkull, metaSkull, owner, spawn);
     }
 
-    private void editSkull(final User user, final ItemStack stack, final SkullMeta skullMeta, final String owner, final boolean spawn) {
+    private void editSkull(final User user, final User receive, final ItemStack stack, final SkullMeta skullMeta, final String owner, final boolean spawn) {
         ess.runTaskAsynchronously(() -> {
             // Run this stuff async because it causes an HTTP request
 
@@ -142,8 +138,11 @@ public class Commandskull extends EssentialsCommand {
             ess.scheduleSyncDelayedTask(() -> {
                 stack.setItemMeta(skullMeta);
                 if (spawn) {
-                    Inventories.addItem(user.getBase(), stack);
-                    user.sendTl("givenSkull", shortOwnerName);
+                    Inventories.addItem(receive.getBase(), stack);
+                    receive.sendTl("givenSkull", shortOwnerName);
+                    if (user != receive) {
+                        user.sendTl("givenSkullOther", receive.getDisplayName(), shortOwnerName);
+                    }
                     return;
                 }
                 user.sendTl("skullChanged", shortOwnerName);
